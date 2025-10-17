@@ -5,6 +5,7 @@ server/__pycache__/
 server/*.db
 server/*.db-journal
 server/*.pyc
+server/*.zip
 
 # フロント側
 frontend/.env
