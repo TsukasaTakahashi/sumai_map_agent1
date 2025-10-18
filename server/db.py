@@ -1,11 +1,12 @@
 """
 データベース初期化とアクセス層
 """
+import os
 import sqlite3
 import time
 from typing import Optional, List, Dict, Any
 
-DB_PATH = "maps.db"
+DB_PATH = os.getenv("DB_PATH", "maps.db")
 
 
 def get_connection():

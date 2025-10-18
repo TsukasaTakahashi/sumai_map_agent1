@@ -19,20 +19,17 @@ from db import (
 )
 from models import CreateMapRequest, CreateMapResponse, GetMapResponse
 
-# 環境変数からAPIキーを取得
+# 環境変数から設定を取得
 GOOGLE_GEOCODING_KEY = os.getenv("GOOGLE_GEOCODING_KEY", "")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", FRONTEND_URL).split(",")
 
 app = FastAPI(title="住まいマップ共有API")
 
-# CORS設定（開発用）
+# CORS設定
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -133,8 +130,8 @@ async def create_map_endpoint(request: CreateMapRequest):
     # DBに保存
     create_map(map_id, request.title, pins_with_coords)
 
-    # 共有URL生成（開発環境想定）
-    share_url = f"http://localhost:5173/m/{map_id}"
+    # 共有URL生成
+    share_url = f"{FRONTEND_URL}/m/{map_id}"
 
     return CreateMapResponse(map_id=map_id, share_url=share_url)
 

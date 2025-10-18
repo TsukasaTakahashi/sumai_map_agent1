@@ -1,15 +1,35 @@
 import React, { useState } from 'react'
 
-const API_BASE = 'http://localhost:8000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 const CreatePage = () => {
   const [title, setTitle] = useState('元町小学校区 おすすめ物件')
-  const [addresses, setAddresses] = useState(
-    'サニーコート元町|神奈川県横浜市中区元町5-200|小学校まで徒歩8分・スーパー至近\n元町ガーデンハウス|神奈川県横浜市中区元町4-170|小学校まで徒歩5分・閑静な住宅街\nヒルサイドテラス山手|神奈川県横浜市中区山手町230|小学校まで徒歩10分・緑豊かな環境'
-  )
+  const [pins, setPins] = useState([
+    { name: 'サニーコート元町', address: '神奈川県横浜市中区元町5-200', note: '小学校まで徒歩8分・スーパー至近' },
+    { name: '元町ガーデンハウス', address: '神奈川県横浜市中区元町4-170', note: '小学校まで徒歩5分・閑静な住宅街' },
+    { name: 'ヒルサイドテラス山手', address: '神奈川県横浜市中区山手町230', note: '小学校まで徒歩10分・緑豊かな環境' },
+  ])
   const [shareUrl, setShareUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const addPin = () => {
+    setPins([...pins, { name: '', address: '', note: '' }])
+  }
+
+  const removePin = (index) => {
+    if (pins.length <= 1) {
+      alert('最低1つの物件が必要です')
+      return
+    }
+    setPins(pins.filter((_, i) => i !== index))
+  }
+
+  const updatePin = (index, field, value) => {
+    const newPins = [...pins]
+    newPins[index][field] = value
+    setPins(newPins)
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -17,43 +37,21 @@ const CreatePage = () => {
     setError('')
     setShareUrl('')
 
-    // 住所を行ごとに分割してピン配列を作成
-    // 形式: "物件名|住所|メモ" または "住所|メモ" または "住所"
-    const lines = addresses.split('\n').filter((line) => line.trim())
-    const pins = lines.map((line, index) => {
-      const parts = line.split('|').map(p => p.trim())
+    // 住所が入力されているピンのみをフィルタ
+    const validPins = pins.filter(pin => pin.address.trim())
 
-      let name, address, note
-
-      if (parts.length >= 3) {
-        // 3つ以上の場合: 物件名|住所|メモ
-        name = parts[0]
-        address = parts[1]
-        note = parts[2]
-      } else if (parts.length === 2) {
-        // 2つの場合: 住所|メモ (物件名は自動生成)
-        name = `物件${String.fromCharCode(65 + index)}` // A, B, C...
-        address = parts[0]
-        note = parts[1]
-      } else {
-        // 1つの場合: 住所のみ
-        name = `物件${String.fromCharCode(65 + index)}`
-        address = parts[0]
-        note = ''
-      }
-
-      return {
-        name: name,
-        address: address,
-        note: note
-      }
-    })
-
-    if (pins.length === 0) {
+    if (validPins.length === 0) {
       setError('住所を少なくとも1つ入力してください')
       setLoading(false)
       return
     }
+
+    // 物件名が空の場合は自動生成
+    const processedPins = validPins.map((pin, index) => ({
+      name: pin.name.trim() || `物件${String.fromCharCode(65 + index)}`,
+      address: pin.address.trim(),
+      note: pin.note.trim()
+    }))
 
     try {
       const response = await fetch(`${API_BASE}/api/maps`, {
@@ -63,7 +61,7 @@ const CreatePage = () => {
         },
         body: JSON.stringify({
           title,
-          pins,
+          pins: processedPins,
         }),
       })
 
@@ -102,22 +100,58 @@ const CreatePage = () => {
           />
         </div>
 
-        <div style={styles.field}>
-          <label style={styles.label}>物件リスト（1行1物件、「 | 」で区切る）</label>
-          <textarea
-            value={addresses}
-            onChange={(e) => setAddresses(e.target.value)}
-            style={styles.textarea}
-            rows={10}
-            placeholder="例: サニーコート元町|神奈川県横浜市中区元町5-200|小学校まで徒歩8分"
-            required
-          />
-          <small style={styles.hint}>
-            形式: 物件名|住所|メモ（物件名とメモは任意）<br/>
-            ・物件名|住所|メモ → すべて指定<br/>
-            ・住所|メモ → 物件名は自動生成（物件A, 物件B...）<br/>
-            ・住所 → 物件名とメモは自動生成
-          </small>
+        <div style={styles.pinsContainer}>
+          <label style={styles.label}>物件リスト</label>
+
+          {pins.map((pin, index) => (
+            <div key={index} style={styles.pinCard}>
+              <div style={styles.pinHeader}>
+                <span style={styles.pinNumber}>物件 {index + 1}</span>
+                {pins.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removePin(index)}
+                    style={styles.removeButton}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              <div style={styles.pinInputs}>
+                <input
+                  type="text"
+                  value={pin.name}
+                  onChange={(e) => updatePin(index, 'name', e.target.value)}
+                  placeholder="物件名（省略可）"
+                  style={styles.input}
+                />
+                <input
+                  type="text"
+                  value={pin.address}
+                  onChange={(e) => updatePin(index, 'address', e.target.value)}
+                  placeholder="住所 *"
+                  style={styles.input}
+                  required
+                />
+                <input
+                  type="text"
+                  value={pin.note}
+                  onChange={(e) => updatePin(index, 'note', e.target.value)}
+                  placeholder="コメント（省略可）"
+                  style={styles.input}
+                />
+              </div>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={addPin}
+            style={styles.addButton}
+          >
+            + 物件を追加
+          </button>
         </div>
 
         <button type="submit" disabled={loading} style={styles.button}>
@@ -233,6 +267,53 @@ const styles = {
     fontSize: '12px',
     color: '#666',
     marginTop: '4px',
+  },
+  pinsContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+  },
+  pinCard: {
+    padding: '15px',
+    border: '1px solid #ddd',
+    borderRadius: '8px',
+    backgroundColor: '#f9f9f9',
+  },
+  pinHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '10px',
+  },
+  pinNumber: {
+    fontWeight: 'bold',
+    color: '#555',
+    fontSize: '14px',
+  },
+  removeButton: {
+    padding: '4px 8px',
+    backgroundColor: '#dc3545',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '16px',
+    fontWeight: 'bold',
+  },
+  pinInputs: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  addButton: {
+    padding: '10px 20px',
+    backgroundColor: '#28a745',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 'bold',
   },
 }
 
