@@ -23,3 +23,12 @@ frontend/.vite/
 # OS
 .DS_Store
 Thumbs.db
+
+# デプロイスクリプト（機密情報を含むため）
+frontend/deploy.sh
+deploy.sh
+*.deploy.sh
+
+# 環境変数ファイル
+.env.local
+.env.*.local

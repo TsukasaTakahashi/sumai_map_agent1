@@ -8,6 +8,15 @@ echo "====================================="
 echo "フロントエンドをデプロイ"
 echo "====================================="
 
+# 環境変数の確認
+if [ -z "$GOOGLE_MAPS_API_KEY" ]; then
+    echo "エラー: GOOGLE_MAPS_API_KEY が設定されていません"
+    echo "使用方法:"
+    echo "  export GOOGLE_MAPS_API_KEY=your-api-key"
+    echo "  ./deploy.sh"
+    exit 1
+fi
+
 # CACHEBUSTを自動更新
 TIMESTAMP=$(date +%s)
 echo "Dockerのキャッシュをクリア中... (CACHEBUST=${TIMESTAMP})"
@@ -21,7 +30,7 @@ gcloud run deploy sumai-map-frontend \
   --platform managed \
   --region asia-northeast1 \
   --allow-unauthenticated \
-  --set-env-vars "VITE_API_BASE_URL=https://sumai-map-backend-h4uibw667a-an.a.run.app,VITE_GOOGLE_MAPS_JS_KEY=AIzaSyB5_kCzu5EXynibi61tEAD1XnewXdUfS9U" \
+  --set-env-vars "VITE_API_BASE_URL=https://sumai-map-backend-h4uibw667a-an.a.run.app,VITE_GOOGLE_MAPS_JS_KEY=${GOOGLE_MAPS_API_KEY}" \
   --project sumai-agent
 
 echo ""
