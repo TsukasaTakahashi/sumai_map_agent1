@@ -8,12 +8,12 @@
 - 短い共有URL（例：`/m/abc123`）を自動生成
 - 各ピンの吹き出しから「地図」「経路」「ストリートビュー」へのリンク
 - ジオコーディング結果をキャッシュして無駄なAPI呼び出しを削減
-- Google Maps APIの無料枠（$200/月）を前提に設計
+- **jageocoder（無料）を使用した住所変換** - APIキー不要、制限なし
 
 ## 技術スタック
 
 - **フロントエンド**: React + Vite + Google Maps JavaScript API
-- **バックエンド**: Python FastAPI
+- **バックエンド**: Python FastAPI + jageocoder（無料ジオコーディング）
 - **データベース**: SQLite
 - **開発環境**: Node.js 18+, Python 3.9+
 
@@ -48,20 +48,14 @@ README.md
 1. [Google Cloud Console](https://console.cloud.google.com/) にアクセス
 2. プロジェクトを作成（または既存のものを選択）
 3. 以下のAPIを有効化：
-   - **Maps JavaScript API** （フロント用）
-   - **Geocoding API** （サーバ用）
+   - **Maps JavaScript API** （フロント用地図表示のみ）
+
+**注**: バックエンドはjageocoder（無料）を使用するため、Geocoding APIは不要です
 
 ### 2. APIキーを作成
 
-#### サーバ側キー（Geocoding用）
-1. 「認証情報」→「認証情報を作成」→「APIキー」
-2. キーの制限を設定：
-   - **アプリケーションの制限**: IPアドレス（開発環境のIPを追加）
-   - **API の制限**: Geocoding API のみ
-3. キーをコピーして保存
-
 #### フロント側キー（Maps JavaScript API用）
-1. 同様に新しいAPIキーを作成
+1. 「認証情報」→「認証情報を作成」→「APIキー」
 2. キーの制限を設定：
    - **アプリケーションの制限**: HTTPリファラ
    - 許可するリファラ:
@@ -80,17 +74,10 @@ cd server
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
-# 依存関係をインストール
+# 依存関係をインストール（jageocoderを含む）
 pip install -r requirements.txt
 
-# 環境変数を設定
-cp .env.example .env
-# .envファイルを編集してGOOGLE_GEOCODING_KEYを設定
-
-# または直接エクスポート（Macの場合）
-export GOOGLE_GEOCODING_KEY=your_geocoding_api_key_here
-
-# サーバーを起動
+# サーバーを起動（APIキー不要）
 uvicorn main:app --reload
 ```
 
@@ -266,19 +253,11 @@ frontend/dist/
 
 ## トラブルシューティング
 
-### エラー: GOOGLE_GEOCODING_KEY が設定されていません
-
-バックエンドの環境変数が設定されていません。
-
-```bash
-export GOOGLE_GEOCODING_KEY=your_key_here
-```
-
 ### エラー: 住所のジオコーディングに失敗しました
 
-- APIキーが正しいか確認
-- Google Cloud Consoleで Geocoding API が有効になっているか確認
-- APIキーの制限設定（IP制限など）が正しいか確認
+jageocoderのリモートAPI接続に問題がある可能性があります：
+- インターネット接続を確認
+- https://jageocoder.info-proto.com/ にアクセスできるか確認
 
 ### マップが表示されない
 

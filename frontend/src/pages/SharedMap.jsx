@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_JS_KEY
+const API_BASE = 'VITE_API_BASE_URL_PLACEHOLDER'
+const GOOGLE_MAPS_API_KEY = 'VITE_GOOGLE_MAPS_JS_KEY_PLACEHOLDER'
 
 const SharedMap = () => {
   const { mapId } = useParams()
@@ -16,9 +16,6 @@ const SharedMap = () => {
   }
 
   useEffect(() => {
-    // ページタイトルを変更
-    document.title = 'XXXX様ご住居探し'
-
     // Google Maps APIスクリプトを動的に読み込み
     if (!window.google) {
       const script = document.createElement('script')
@@ -48,6 +45,13 @@ const SharedMap = () => {
       setLoading(false)
     }
   }
+
+  // mapDataが取得されたらページタイトルを更新
+  useEffect(() => {
+    if (mapData) {
+      document.title = mapData.title || 'SumaiAgent - Map'
+    }
+  }, [mapData])
 
   useEffect(() => {
     if (mapData && window.google && !mapInstance) {

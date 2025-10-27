@@ -1,0 +1,28 @@
+# .gcloudignore - Cloud Build時に除外するファイル
+
+# Node modules
+node_modules/
+
+# ビルド成果物（ビルド時に生成される）
+dist/
+build/
+
+# 環境設定
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore

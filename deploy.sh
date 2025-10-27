@@ -14,14 +14,8 @@ if [ -z "$PROJECT_ID" ]; then
     echo "エラー: PROJECT_ID が設定されていません"
     echo "使用方法:"
     echo "  export PROJECT_ID=your-project-id"
-    echo "  export GEOCODING_API_KEY=your-geocoding-key"
     echo "  export MAPS_JS_API_KEY=your-maps-js-key"
     echo "  ./deploy.sh"
-    exit 1
-fi
-
-if [ -z "$GEOCODING_API_KEY" ]; then
-    echo "エラー: GEOCODING_API_KEY が設定されていません"
     exit 1
 fi
 
@@ -50,7 +44,7 @@ gcloud run deploy sumai-map-backend \
   --platform managed \
   --region $REGION \
   --allow-unauthenticated \
-  --set-env-vars "GOOGLE_GEOCODING_KEY=$GEOCODING_API_KEY,DB_PATH=/data/maps.db" \
+  --set-env-vars "DB_PATH=/data/maps.db" \
   --cpu 1 \
   --memory 512Mi \
   --min-instances 0 \
@@ -70,6 +64,12 @@ echo "2. フロントエンドをデプロイ中..."
 echo "====================================="
 cd frontend
 
+# キャッシュバスト: Dockerfileのビルドタイムスタンプを更新
+echo "Dockerのキャッシュをクリア中..."
+TIMESTAMP=$(date +%s)
+sed -i.bak "s/ARG CACHEBUST=.*/ARG CACHEBUST=${TIMESTAMP}/" Dockerfile
+echo "CACHEBUST=${TIMESTAMP} に更新"
+
 gcloud run deploy sumai-map-frontend \
   --source . \
   --platform managed \
@@ -86,6 +86,9 @@ FRONTEND_URL=$(gcloud run services describe sumai-map-frontend --region $REGION 
 echo
 echo "フロントエンドURL: $FRONTEND_URL"
 echo
+
+# Dockerfileをクリーンアップ（バックアップがあれば削除）
+rm -f Dockerfile.bak
 
 cd ..
 

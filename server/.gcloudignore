@@ -1,0 +1,31 @@
+# .gcloudignore - Cloud Build時に除外するファイル
+
+# 大容量の辞書ファイル（実行時にjageocoder経由でアクセス）
+*.zip
+jukyo_all_v21.zip
+
+# Python関連
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# テスト・開発ファイル
+*.db
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

@@ -16,8 +16,8 @@ COPY . .
 # SQLiteファイルを保存するディレクトリを作成
 RUN mkdir -p /data
 
-# ポート8000を公開
-EXPOSE 8000
+# ポートを公開（Cloud RunのPORT環境変数を使用）
+EXPOSE 8080
 
-# Uvicornでアプリケーションを起動
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Uvicornでアプリケーションを起動（PORT環境変数を使用）
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}

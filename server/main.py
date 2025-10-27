@@ -7,7 +7,7 @@ import string
 from typing import Dict, Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-import httpx
+import jageocoder
 
 from db import (
     init_db,
@@ -20,7 +20,6 @@ from db import (
 from models import CreateMapRequest, CreateMapResponse, GetMapResponse
 
 # 環境変数から設定を取得
-GOOGLE_GEOCODING_KEY = os.getenv("GOOGLE_GEOCODING_KEY", "")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", FRONTEND_URL).split(",")
 
@@ -38,10 +37,15 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_event():
-    """起動時にDB初期化"""
+    """起動時にDB初期化とjageocoder初期化"""
     init_db()
-    if not GOOGLE_GEOCODING_KEY:
-        print("警告: GOOGLE_GEOCODING_KEY が設定されていません")
+
+    # jageocoderをリモートAPI経由で初期化
+    try:
+        jageocoder.init(url='https://jageocoder.info-proto.com/jsonrpc')
+        print("jageocoder initialized (remote API)")
+    except Exception as e:
+        print(f"警告: jageocoder初期化に失敗しました: {e}")
 
 
 def generate_map_id(length: int = 6) -> str:
@@ -52,7 +56,7 @@ def generate_map_id(length: int = 6) -> str:
 
 async def geocode_address(address: str) -> Dict[str, float]:
     """
-    Google Geocoding APIで住所を緯度経度に変換
+    jageocoderで住所を緯度経度に変換
     キャッシュを優先利用
     """
     # キャッシュチェック
@@ -61,32 +65,25 @@ async def geocode_address(address: str) -> Dict[str, float]:
         print(f"キャッシュヒット: {address}")
         return cached
 
-    # APIリクエスト
-    if not GOOGLE_GEOCODING_KEY:
+    # jageocoderで検索
+    try:
+        result = jageocoder.search(address)
+    except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail="GOOGLE_GEOCODING_KEY が設定されていません"
+            detail=f"ジオコーディングエラー: {str(e)}"
         )
 
-    url = "https://maps.googleapis.com/maps/api/geocode/json"
-    params = {
-        "address": address,
-        "key": GOOGLE_GEOCODING_KEY
-    }
-
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url, params=params)
-        data = response.json()
-
-    if data["status"] != "OK" or not data.get("results"):
+    if not result or not result.get("candidates"):
         raise HTTPException(
             status_code=422,
             detail=f"住所のジオコーディングに失敗しました: {address}"
         )
 
-    location = data["results"][0]["geometry"]["location"]
-    lat = location["lat"]
-    lng = location["lng"]
+    # 最も確度の高い候補を使用
+    candidate = result["candidates"][0]
+    lat = candidate["y"]
+    lng = candidate["x"]
 
     # キャッシュに保存
     save_geocode_to_cache(address, lat, lng)

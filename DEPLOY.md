@@ -22,8 +22,8 @@
    - https://www.docker.com/products/docker-desktop/
 
 4. **Google Maps APIキー**
-   - Geocoding API用（バックエンド）
-   - Maps JavaScript API用（フロントエンド）
+   - Maps JavaScript API用（フロントエンド地図表示のみ）
+   - バックエンドはjageocoder（無料）を使用するためAPIキー不要
 
 ---
 
@@ -51,15 +51,13 @@ gcloud services enable cloudbuild.googleapis.com
 cd server
 
 # イメージをビルドしてCloud Runにデプロイ
+# jageocoder（無料）を使用するためGEOCODING_API_KEYは不要
 gcloud run deploy sumai-map-backend \
   --source . \
   --platform managed \
   --region asia-northeast1 \
   --allow-unauthenticated \
-  --set-env-vars "GOOGLE_GEOCODING_KEY=YOUR_GEOCODING_API_KEY" \
   --set-env-vars "DB_PATH=/data/maps.db" \
-  --set-env-vars "FRONTEND_URL=https://YOUR_FRONTEND_URL" \
-  --execution-environment gen2 \
   --cpu 1 \
   --memory 512Mi \
   --min-instances 0 \
@@ -124,18 +122,15 @@ gcloud run deploy sumai-map-backend \
 
 セキュリティのため、APIキーに制限を設定します。
 
-### Geocoding API Key（バックエンド用）
-1. https://console.cloud.google.com/apis/credentials
-2. バックエンド用のAPIキーを選択
-3. 「アプリケーションの制限」→「なし」（Cloud Run IPは動的なため）
-4. 「API の制限」→「Geocoding API」のみ許可
-
 ### Maps JavaScript API Key（フロントエンド用）
-1. フロントエンド用のAPIキーを選択
-2. 「アプリケーションの制限」→「HTTPリファラー」
-3. 以下を追加:
+1. https://console.cloud.google.com/apis/credentials
+2. フロントエンド用のAPIキーを選択
+3. 「アプリケーションの制限」→「HTTPリファラー」
+4. 以下を追加:
    - `https://YOUR_FRONTEND_URL/*`
-4. 「API の制限」→「Maps JavaScript API」のみ許可
+5. 「API の制限」→「Maps JavaScript API」のみ許可
+
+**注**: バックエンドはjageocoder（無料）を使用するため、Geocoding APIキーは不要です
 
 ---
 

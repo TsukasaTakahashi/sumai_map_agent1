@@ -1,13 +1,11 @@
 import React, { useState } from 'react'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE = 'VITE_API_BASE_URL_PLACEHOLDER'
 
 const CreatePage = () => {
-  const [title, setTitle] = useState('元町小学校区 おすすめ物件')
+  const [title, setTitle] = useState('マップタイトル')
   const [pins, setPins] = useState([
-    { name: 'サニーコート元町', address: '神奈川県横浜市中区元町5-200', note: '小学校まで徒歩8分・スーパー至近' },
-    { name: '元町ガーデンハウス', address: '神奈川県横浜市中区元町4-170', note: '小学校まで徒歩5分・閑静な住宅街' },
-    { name: 'ヒルサイドテラス山手', address: '神奈川県横浜市中区山手町230', note: '小学校まで徒歩10分・緑豊かな環境' },
+    { name: '', address: '', note: '' },
   ])
   const [shareUrl, setShareUrl] = useState('')
   const [loading, setLoading] = useState(false)
@@ -66,13 +64,30 @@ const CreatePage = () => {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.detail || 'マップの作成に失敗しました')
+        let errorMessage = 'マップの作成に失敗しました'
+        try {
+          const errorText = await response.text()
+          const errorData = JSON.parse(errorText)
+          errorMessage = errorData.detail || errorMessage
+        } catch {
+          // JSONパースに失敗した場合はデフォルトメッセージ
+        }
+        throw new Error(errorMessage)
       }
 
-      const data = await response.json()
+      let data
+      try {
+        const responseText = await response.text()
+        console.log('レスポンス内容:', responseText)
+        data = JSON.parse(responseText)
+      } catch (jsonError) {
+        console.error('JSONパースエラー:', jsonError)
+        throw new Error('サーバーからの応答が不正です')
+      }
+
       setShareUrl(data.share_url)
     } catch (err) {
+      console.error('エラー詳細:', err)
       setError(err.message)
     } finally {
       setLoading(false)
@@ -86,7 +101,7 @@ const CreatePage = () => {
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>住まいマップ共有 - 作成</h1>
+      <h1 style={styles.title}>SumaiAgent - Map</h1>
 
       <form onSubmit={handleSubmit} style={styles.form}>
         <div style={styles.field}>
@@ -130,7 +145,7 @@ const CreatePage = () => {
                   type="text"
                   value={pin.address}
                   onChange={(e) => updatePin(index, 'address', e.target.value)}
-                  placeholder="住所 *"
+                  placeholder="住所（必須）"
                   style={styles.input}
                   required
                 />
