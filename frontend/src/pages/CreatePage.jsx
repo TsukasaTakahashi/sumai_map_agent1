@@ -10,6 +10,7 @@ const CreatePage = () => {
   const [shareUrl, setShareUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [skippedAddresses, setSkippedAddresses] = useState([])
 
   const addPin = () => {
     setPins([...pins, { name: '', address: '', note: '' }])
@@ -34,6 +35,7 @@ const CreatePage = () => {
     setLoading(true)
     setError('')
     setShareUrl('')
+    setSkippedAddresses([])
 
     // 住所が入力されているピンのみをフィルタ
     const validPins = pins.filter(pin => pin.address.trim())
@@ -86,6 +88,9 @@ const CreatePage = () => {
       }
 
       setShareUrl(data.share_url)
+      if (data.skipped_addresses && data.skipped_addresses.length > 0) {
+        setSkippedAddresses(data.skipped_addresses)
+      }
     } catch (err) {
       console.error('エラー詳細:', err)
       setError(err.message)
@@ -180,6 +185,17 @@ const CreatePage = () => {
         </div>
       )}
 
+      {skippedAddresses.length > 0 && (
+        <div style={styles.warning}>
+          <strong>警告:</strong> 以下の住所が見つからなかったのでスキップしました:
+          <ul style={styles.warningList}>
+            {skippedAddresses.map((addr, index) => (
+              <li key={index}>{addr}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {shareUrl && (
         <div style={styles.success}>
           <h2>作成完了!</h2>
@@ -250,6 +266,17 @@ const styles = {
     backgroundColor: '#f8d7da',
     color: '#721c24',
     borderRadius: '4px',
+  },
+  warning: {
+    marginTop: '20px',
+    padding: '15px',
+    backgroundColor: '#fff3cd',
+    color: '#856404',
+    borderRadius: '4px',
+  },
+  warningList: {
+    marginTop: '10px',
+    marginLeft: '20px',
   },
   success: {
     marginTop: '20px',

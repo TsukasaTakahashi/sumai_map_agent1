@@ -19,6 +19,7 @@ class CreateMapRequest(BaseModel):
 class CreateMapResponse(BaseModel):
     map_id: str
     share_url: str
+    skipped_addresses: Optional[List[str]] = []
 
 
 class PinOutput(BaseModel):

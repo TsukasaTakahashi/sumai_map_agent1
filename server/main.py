@@ -102,6 +102,7 @@ async def create_map_endpoint(request: CreateMapRequest):
     4. 短縮URLを返す
     """
     pins_with_coords = []
+    skipped_addresses = []
 
     # 各ピンをジオコーディング
     for pin in request.pins:
@@ -116,10 +117,10 @@ async def create_map_endpoint(request: CreateMapRequest):
                 "note": pin.note or ""
             })
         except HTTPException as e:
-            raise HTTPException(
-                status_code=422,
-                detail=f"住所 '{pin.address}' のジオコーディングに失敗しました"
-            )
+            # 無効な住所はスキップして処理を続行
+            print(f"住所をスキップ: {pin.address}")
+            skipped_addresses.append(pin.address)
+            continue
 
     # マップIDを生成（衝突チェックは簡易版）
     map_id = generate_map_id()
@@ -130,7 +131,11 @@ async def create_map_endpoint(request: CreateMapRequest):
     # 共有URL生成
     share_url = f"{FRONTEND_URL}/m/{map_id}"
 
-    return CreateMapResponse(map_id=map_id, share_url=share_url)
+    return CreateMapResponse(
+        map_id=map_id,
+        share_url=share_url,
+        skipped_addresses=skipped_addresses
+    )
 
 
 @app.get("/api/maps/{map_id}", response_model=GetMapResponse)
