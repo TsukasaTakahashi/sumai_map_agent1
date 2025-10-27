@@ -8,11 +8,27 @@ main (本番環境・安定版)
        └── feature/* (個別機能開発ブランチ)
 ```
 
+## 環境構成
+
+### 本番環境 (Production)
+- **ブランチ**: `main`
+- **フロントエンド**: https://sumai-map-frontend-801454761821.asia-northeast1.run.app
+- **バックエンド**: https://sumai-map-backend-801454761821.asia-northeast1.run.app
+- **用途**: エンドユーザー向けの安定版
+
+### 開発環境 (Development)
+- **ブランチ**: `develop`
+- **フロントエンド**: https://sumai-map-frontend-dev-801454761821.asia-northeast1.run.app
+- **バックエンド**: https://sumai-map-backend-dev-801454761821.asia-northeast1.run.app
+- **用途**: 開発・テスト用
+
+---
+
 ## 各ブランチの役割
 
 ### `main` ブランチ
 - **用途**: 本番環境にデプロイされる安定版
-- **デプロイURL**: https://sumai-map-frontend-h4uibw667a-an.a.run.app
+- **デプロイ先**: 本番環境（エンドユーザー向け）
 - **ルール**:
   - 直接コミットしない
   - develop ブランチからのマージのみ
@@ -20,9 +36,10 @@ main (本番環境・安定版)
 
 ### `develop` ブランチ
 - **用途**: 開発統合ブランチ
+- **デプロイ先**: 開発環境（テスト用）
 - **ルール**:
   - 日常的な開発はここで行う
-  - 安定したら main にマージ
+  - 開発環境で動作確認後、main にマージ
 
 ### `feature/*` ブランチ（オプション）
 - **用途**: 大きな機能開発用
@@ -51,11 +68,49 @@ git add .
 git commit -m "修正: ○○を変更"
 git push origin develop
 
-# 4. 動作確認後、main にマージ
+# 4. 開発環境にデプロイして動作確認
+cd frontend
+export GOOGLE_MAPS_API_KEY=your-api-key
+./deploy-dev.sh
+
+cd ../server
+./deploy-dev.sh
+
+# 5. 開発環境で確認 → OK なら main にマージ
 git checkout main
 git pull origin main
 git merge develop
 git push origin main
+
+# 6. 本番環境にデプロイ
+cd frontend
+./deploy.sh
+
+cd ../server
+# バックエンドは自動デプロイまたは手動で実行
+gcloud run deploy sumai-map-backend --source . --region asia-northeast1 --project sumai-agent
+```
+
+### 開発環境デプロイ（develop ブランチから）
+
+```bash
+# develop ブランチに切り替え
+git checkout develop
+
+# 最新を取得
+git pull origin develop
+
+# バックエンド開発環境デプロイ
+cd server
+./deploy-dev.sh
+
+# フロントエンド開発環境デプロイ
+cd ../frontend
+export GOOGLE_MAPS_API_KEY=your-api-key
+./deploy-dev.sh
+
+# 開発環境で確認
+# https://sumai-map-frontend-dev-801454761821.asia-northeast1.run.app
 ```
 
 ### 本番デプロイ（main ブランチから）
@@ -67,9 +122,17 @@ git checkout main
 # 最新を取得
 git pull origin main
 
-# デプロイ
-cd frontend
+# バックエンド本番環境デプロイ
+cd server
+gcloud run deploy sumai-map-backend --source . --region asia-northeast1 --project sumai-agent
+
+# フロントエンド本番環境デプロイ
+cd ../frontend
+export GOOGLE_MAPS_API_KEY=your-api-key
 ./deploy.sh
+
+# 本番環境で確認
+# https://sumai-map-frontend-801454761821.asia-northeast1.run.app
 ```
 
 ---
@@ -122,9 +185,13 @@ git checkout develop
 git merge hotfix/修正内容
 git push origin develop
 
-# デプロイ
+# 本番環境にデプロイ
 cd frontend
+export GOOGLE_MAPS_API_KEY=your-api-key
 ./deploy.sh
+
+cd ../server
+gcloud run deploy sumai-map-backend --source . --region asia-northeast1 --project sumai-agent
 ```
 
 ---

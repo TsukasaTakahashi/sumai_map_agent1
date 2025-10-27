@@ -26,6 +26,8 @@ Thumbs.db
 
 # デプロイスクリプト（機密情報を含むため）
 frontend/deploy.sh
+frontend/deploy-dev.sh
+server/deploy-dev.sh
 deploy.sh
 *.deploy.sh
 
